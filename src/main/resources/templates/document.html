@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>请假单据</title>
+</head>
+<style type="text/css">
+
+    table {
+        *border-collapse: collapse; /* IE7 and lower */
+        border-spacing: 0;
+        width: 100%;
+    }
+    .bordered {
+        border: solid #ccc 1px;
+        -moz-border-radius: 6px;
+        -webkit-border-radius: 6px;
+        border-radius: 6px;
+        -webkit-box-shadow: 0 1px 1px #ccc;
+        -moz-box-shadow: 0 1px 1px #ccc;
+        box-shadow: 0 1px 1px #ccc;
+    }
+
+    .bordered tr:hover {
+        background: #fbf8e9;
+        -o-transition: all 0.1s ease-in-out;
+        -webkit-transition: all 0.1s ease-in-out;
+        -moz-transition: all 0.1s ease-in-out;
+        -ms-transition: all 0.1s ease-in-out;
+        transition: all 0.1s ease-in-out;
+    }
+
+    .bordered td, .bordered th {
+        border-left: 1px solid #ccc;
+        border-top: 1px solid #ccc;
+        padding:3px;/*供修改*/
+        text-align: center;/*供修改*/
+    }
+    .bordered th {
+        background-color: #dce9f9;
+        background-image: -webkit-gradient(linear, left top, left bottom, from(#ebf3fc), to(#dce9f9));
+        background-image: -webkit-linear-gradient(top, #ebf3fc, #dce9f9);
+        background-image: -moz-linear-gradient(top, #ebf3fc, #dce9f9);
+        background-image: -ms-linear-gradient(top, #ebf3fc, #dce9f9);
+        background-image: -o-linear-gradient(top, #ebf3fc, #dce9f9);
+        background-image: linear-gradient(top, #ebf3fc, #dce9f9);
+        -webkit-box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
+        -moz-box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+        box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
+        border-top: none;
+        text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    }
+
+    .bordered td:first-child, .bordered th:first-child {
+        border-left: none;
+    }
+
+    .bordered th:first-child {
+        -moz-border-radius: 6px 0 0 0;
+        -webkit-border-radius: 6px 0 0 0;
+        border-radius: 6px 0 0 0;
+    }
+
+    .bordered th:last-child {
+        -moz-border-radius: 0 6px 0 0;
+        -webkit-border-radius: 0 6px 0 0;
+        border-radius: 0 6px 0 0;
+    }
+
+    .bordered th:only-child{
+        -moz-border-radius: 6px 6px 0 0;
+        -webkit-border-radius: 6px 6px 0 0;
+        border-radius: 6px 6px 0 0;
+    }
+
+    .bordered tr:last-child td:first-child {
+        -moz-border-radius: 0 0 0 6px;
+        -webkit-border-radius: 0 0 0 6px;
+        border-radius: 0 0 0 6px;
+    }
+
+    .bordered tr:last-child td:last-child {
+        -moz-border-radius: 0 0 6px 0;
+        -webkit-border-radius: 0 0 6px 0;
+        border-radius: 0 0 6px 0;
+    }
+</style>
+<body>
+<div style="text-align: center">
+    <h1>个人请假单据</h1>
+    <form id="form">
+        输入名称：<input type="text" name="userId" id="userId">
+    </form>
+    <hr>
+    <button onclick="find();">历史申请查询</button>
+</div>
+    <br>
+<div>
+
+    <table class="bordered"></table>
+
+</div>
+
+
+
+
+<script type="text/javascript" src="js/jquery-2.1.1.js"></script>
+<script>
+    function find() {
+        var $userId = $("#form");
+        console.log($userId);
+        $.ajax({
+            method: "post",
+            url: '/expense/personlist',
+            data: $userId.serialize(),
+            dataType: 'json',
+            success: function(json) {
+                var item = "<tr style='background-color: #dce9f9'>" +
+                                "<td>申请人工号</td>" +
+                                "<td>申请人名称</td>" +
+                                "<td>开始时间</td>" +
+                                "<td>请假天数</td>" +
+                                "<td>请假原因</td>"+
+                                "<td>是否通过</td>"
+                            "</tr>";
+                $.each(json, function(i, result) {
+                    item = item + "<tr>" +
+                        "<td>" + result['userId'] + "</td>" +
+                        "<td>" + result['userName'] + "</td>" +
+                        "<td>" + result['startDate'] + "</td>" +
+                        "<td>" + result['numDays'] + "</td>" +
+                        "<td>" + result['description'] + "</td>" +
+                        "<td>" + result['isok'] + "</td>" +
+                        "</tr>";
+                });
+                $('.bordered').append(item);
+            }
+        });
+    }
+</script>
+</body>
+</html>

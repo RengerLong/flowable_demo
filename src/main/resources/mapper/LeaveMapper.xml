@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.nie.dao.LeaveDao">
+    <resultMap id="BaseResult" type="com.nie.entity.Leave">
+        <id column="id" property="id"></id>
+        <result column="system_code" property="systemCode"></result>
+        <result column="bill_code" property="billCode"></result>
+        <result column="pk_org" property="pkOrg"></result>
+        <result column="org_name" property="orgName"></result>
+        <result column="issue_date" property="issueDate"></result>
+    </resultMap>
+
+    <!-- 新增会员卡发行 -->
+    <insert id="saveLeave" useGeneratedKeys="true" keyProperty="id" parameterType="com.nie.entity.Leave">
+        INSERT INTO a_leave (name,startDate,numDays,description
+        <if test="isok != null">,isok</if> )
+        VALUES(#{name}, #{startDate}, #{numDays}, #{description}
+        <if test="isok != null">,#{isok}</if> );
+    </insert>
+
+</mapper>

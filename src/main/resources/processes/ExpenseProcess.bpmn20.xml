@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:flowable="http://flowable.org/bpmn" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://www.flowable.org/processdef" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" expressionLanguage="http://www.w3.org/1999/XPath" id="m1547429151051" name="" targetNamespace="http://www.flowable.org/processdef" typeLanguage="http://www.w3.org/2001/XMLSchema">
+  <process id="Expense" isClosed="false" isExecutable="true" name="请假审批" processType="None">
+    <documentation id="Expense_D_1"><![CDATA[请假流程]]></documentation>
+    <startEvent id="start" name="开始"/>
+    <userTask activiti:exclusive="true" flowable:assignee="${taskUser}" id="fillTask" name="请假审批">
+      <extensionElements>
+        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+      </extensionElements>
+    </userTask>
+    <exclusiveGateway gatewayDirection="Unspecified" id="judgeTask"/>
+    <userTask activiti:exclusive="true" flowable:assignee="rengar" id="directorTak" name="经理审批">
+      <extensionElements>
+        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+      </extensionElements>
+    </userTask>
+    <userTask activiti:exclusive="true" id="bossTask" name="老板审批">
+      <extensionElements>
+        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        <activiti:taskListener class="com.nie.handler.BossTaskHandler" event="create"/>
+      </extensionElements>
+    </userTask>
+    <sequenceFlow id="directorNotPassFlow" name="驳回" sourceRef="directorTak" targetRef="fillTask">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome=='驳回'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="bossNotPassFlow" name="驳回" sourceRef="bossTask" targetRef="fillTask">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome=='驳回'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="flow1" sourceRef="start" targetRef="fillTask"/>
+    <sequenceFlow id="flow2" sourceRef="fillTask" targetRef="judgeTask"/>
+    <sequenceFlow id="judgeMore" name="大于5天" sourceRef="judgeTask" targetRef="bossTask">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${numDays > 5}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="judgeLess" name="小于5天" sourceRef="judgeTask" targetRef="directorTak">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${numDays <= 5}]]></conditionExpression>
+    </sequenceFlow>
+    <parallelGateway gatewayDirection="Unspecified" id="Approval-1" name="并行网管-分支"/>
+    <sequenceFlow id="_3" sourceRef="directorTak" targetRef="Approval-1"/>
+    <userTask activiti:exclusive="true" flowable:assignee="bx1" id="AdminTask" name="行政审批"/>
+    <userTask activiti:candidateUsers="一号,二号,三号,四号,五号" activiti:exclusive="true" id="PersonTask" name="人事审批"/>
+    <sequenceFlow id="_7" sourceRef="Approval-1" targetRef="PersonTask"/>
+    <endEvent id="EndEvent" name="结束"/>
+    <sequenceFlow id="_12" name="通过" sourceRef="bossTask" targetRef="EndEvent">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome=='通过'}]]></conditionExpression>
+    </sequenceFlow>
+    <parallelGateway gatewayDirection="Unspecified" id="Approval-2" name="并行网管-合并"/>
+    <sequenceFlow id="end" name="通过" sourceRef="Approval-2" targetRef="EndEvent">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome=='通过'}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask activiti:candidateGroups="BOSS" activiti:exclusive="true" id="statistics" name="统计"/>
+    <sequenceFlow id="_5" sourceRef="Approval-2" targetRef="statistics"/>
+    <sequenceFlow id="_8" name="通过" sourceRef="statistics" targetRef="EndEvent">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome=='通过'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="_10" name="驳回" sourceRef="statistics" targetRef="fillTask">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome=='驳回'}]]></conditionExpression>
+    </sequenceFlow>
+    <serviceTask activiti:class="com.nie.handler.EmailTaskHandler" activiti:exclusive="true" id="ServiceTask" name="邮件通知"/>
+    <sequenceFlow id="_9" sourceRef="PersonTask" targetRef="ServiceTask"/>
+    <sequenceFlow id="_11" sourceRef="ServiceTask" targetRef="Approval-2"/>
+    <sequenceFlow id="_2" name="toXinZen" sourceRef="Approval-1" targetRef="AdminTask"/>
+    <sequenceFlow id="_4" sourceRef="AdminTask" targetRef="Approval-2"/>
+  </process>
+  <bpmndi:BPMNDiagram documentation="background=#3C3F41;count=1;horizontalcount=1;orientation=0;width=842.4;height=1195.2;imageableWidth=832.4;imageableHeight=1185.2;imageableX=5.0;imageableY=5.0" id="Diagram-_1" name="New Diagram">
+    <bpmndi:BPMNPlane bpmnElement="Expense">
+      <bpmndi:BPMNShape bpmnElement="start" id="Shape-start">
+        <omgdc:Bounds height="32.0" width="32.0" x="335.0" y="60.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="32.0" width="32.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="fillTask" id="Shape-fillTask">
+        <omgdc:Bounds height="80.0" width="100.0" x="305.0" y="155.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="80.0" width="100.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="judgeTask" id="Shape-judgeTask" isMarkerVisible="false">
+        <omgdc:Bounds height="32.0" width="32.0" x="340.0" y="290.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="32.0" width="32.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="directorTak" id="Shape-directorTak">
+        <omgdc:Bounds height="80.0" width="100.0" x="520.0" y="360.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="80.0" width="100.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="bossTask" id="Shape-bossTask">
+        <omgdc:Bounds height="80.0" width="100.0" x="130.0" y="360.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="80.0" width="100.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Approval-1" id="Shape-Approval-1">
+        <omgdc:Bounds height="32.0" width="32.0" x="540.0" y="465.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="32.0" width="32.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="AdminTask" id="Shape-AdminTask">
+        <omgdc:Bounds height="55.0" width="85.0" x="380.0" y="495.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="55.0" width="85.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="PersonTask" id="Shape-PersonTask">
+        <omgdc:Bounds height="55.0" width="85.0" x="645.0" y="495.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="55.0" width="85.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndEvent" id="Shape-EndEvent">
+        <omgdc:Bounds height="32.0" width="32.0" x="275.0" y="735.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="32.0" width="32.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Approval-2" id="Shape-Approval-2">
+        <omgdc:Bounds height="32.0" width="32.0" x="545.0" y="625.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="32.0" width="32.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="statistics" id="Shape-statistics">
+        <omgdc:Bounds height="55.0" width="85.0" x="520.0" y="730.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="55.0" width="85.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="ServiceTask" id="Shape-ServiceTask">
+        <omgdc:Bounds height="55.0" width="85.0" x="650.0" y="600.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="55.0" width="85.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="_12" id="BPMNEdge__12" sourceElement="bossTask" targetElement="EndEvent">
+        <omgdi:waypoint x="190.0" y="440.0"/>
+        <omgdi:waypoint x="190.0" y="670.0"/>
+        <omgdi:waypoint x="275.0" y="751.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="-141.0" width="1.0" x="0.0" y="5.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="bossNotPassFlow" id="BPMNEdge_bossNotPassFlow" sourceElement="bossTask" targetElement="fillTask">
+        <omgdi:waypoint x="195.0" y="360.0"/>
+        <omgdi:waypoint x="195.0" y="290.0"/>
+        <omgdi:waypoint x="305.0" y="195.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="10.0" width="10.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1" sourceElement="start" targetElement="fillTask">
+        <omgdi:waypoint x="351.0" y="92.0"/>
+        <omgdi:waypoint x="351.0" y="155.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="-1.0" width="-1.0" x="-1.0" y="-1.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2" sourceElement="fillTask" targetElement="judgeTask">
+        <omgdi:waypoint x="356.0" y="235.0"/>
+        <omgdi:waypoint x="356.0" y="290.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="-1.0" width="-1.0" x="-1.0" y="-1.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="directorNotPassFlow" id="BPMNEdge_directorNotPassFlow" sourceElement="directorTak" targetElement="fillTask">
+        <omgdi:waypoint x="560.0" y="360.0"/>
+        <omgdi:waypoint x="560.0" y="225.0"/>
+        <omgdi:waypoint x="235.0" y="115.0"/>
+        <omgdi:waypoint x="405.0" y="225.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="-25.0" width="0.0" x="-1.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="judgeMore" id="BPMNEdge_judgeMore" sourceElement="judgeTask" targetElement="bossTask">
+        <omgdi:waypoint x="355.0" y="321.0"/>
+        <omgdi:waypoint x="355.0" y="400.0"/>
+        <omgdi:waypoint x="230.0" y="400.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="-49.0" x="0.0" y="-15.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_2" id="BPMNEdge__2" sourceElement="Approval-1" targetElement="AdminTask">
+        <omgdi:waypoint x="540.0" y="481.0"/>
+        <omgdi:waypoint x="465.0" y="522.5"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_3" id="BPMNEdge__3" sourceElement="directorTak" targetElement="Approval-1">
+        <omgdi:waypoint x="556.0" y="440.0"/>
+        <omgdi:waypoint x="556.0" y="465.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="judgeLess" id="BPMNEdge_judgeLess" sourceElement="judgeTask" targetElement="directorTak">
+        <omgdi:waypoint x="355.0" y="321.0"/>
+        <omgdi:waypoint x="355.0" y="400.0"/>
+        <omgdi:waypoint x="520.0" y="400.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="45.0" x="0.0" y="20.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_4" id="BPMNEdge__4" sourceElement="AdminTask" targetElement="Approval-2">
+        <omgdi:waypoint x="425.0" y="550.0"/>
+        <omgdi:waypoint x="425.0" y="590.0"/>
+        <omgdi:waypoint x="545.0" y="641.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_5" id="BPMNEdge__5" sourceElement="Approval-2" targetElement="statistics">
+        <omgdi:waypoint x="561.0" y="657.0"/>
+        <omgdi:waypoint x="561.0" y="730.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_7" id="BPMNEdge__7" sourceElement="Approval-1" targetElement="PersonTask">
+        <omgdi:waypoint x="572.0" y="481.0"/>
+        <omgdi:waypoint x="645.0" y="522.5"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_8" id="BPMNEdge__8" sourceElement="statistics" targetElement="EndEvent">
+        <omgdi:waypoint x="520.0" y="750.0"/>
+        <omgdi:waypoint x="504.0" y="750.0"/>
+        <omgdi:waypoint x="306.9687194226713" y="750.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_9" id="BPMNEdge__9" sourceElement="PersonTask" targetElement="ServiceTask">
+        <omgdi:waypoint x="690.0" y="550.0"/>
+        <omgdi:waypoint x="690.0" y="600.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_11" id="BPMNEdge__11" sourceElement="ServiceTask" targetElement="Approval-2">
+        <omgdi:waypoint x="650.0" y="640.0"/>
+        <omgdi:waypoint x="615.0" y="640.0"/>
+        <omgdi:waypoint x="576.0" y="640.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_10" id="BPMNEdge__10" sourceElement="statistics" targetElement="fillTask">
+        <omgdi:waypoint x="605.0" y="757.5"/>
+        <omgdi:waypoint x="850.0" y="505.0"/>
+        <omgdi:waypoint x="405.0" y="195.0"/>
+        <bpmndi:BPMNLabel>
+          <omgdc:Bounds height="0.0" width="0.0" x="0.0" y="0.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

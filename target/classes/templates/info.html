@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>请假发起</title>
+</head>
+<body>
+<h1>请假发起</h1>
+
+<form action="/expense/add" method="post" xmlns:th="http://www.thymeleaf.org">
+    <table>
+        <tr>
+            <td>
+                申请人：
+            </td>
+            <td>
+                <input type="text" name="name" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                开始时间：
+            </td>
+            <td>
+                <input type="date" name="startDate" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                请假天数：
+            </td>
+            <td>
+                <input type="text" name="numDays" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                请假原因：
+            </td>
+            <td>
+                <input type="text" name="description" />
+            </td>
+        </tr>
+    </table>
+    <button type="submit"> 提交申请 </button>
+</form>
+</body>
+</html>
