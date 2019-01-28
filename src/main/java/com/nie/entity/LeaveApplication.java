@@ -16,6 +16,7 @@ public class LeaveApplication {
     private String userName;    //请假人名称
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private String processInstanceID;  //流程实例ID
     private Date startDate;     //开始时间
     private Integer numDays;    //申请天数
     private String description;      //请假原因

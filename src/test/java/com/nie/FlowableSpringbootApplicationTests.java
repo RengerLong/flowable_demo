@@ -2,6 +2,8 @@ package com.nie;
 
 import com.nie.entity.Leave;
 import com.nie.service.LeaveService;
+import org.flowable.bpmn.model.*;
+import org.flowable.bpmn.model.Process;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.ProcessEngines;
 import org.flowable.engine.RepositoryService;
@@ -22,10 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -314,6 +313,7 @@ public class FlowableSpringbootApplicationTests {
     public void findTask() {
         List<HistoricTaskInstance> list = processEngine.getHistoryService()//与历史数据（历史表）相关的service
                 .createHistoricTaskInstanceQuery()//创建历史任务实例查询
+                .processInstanceId("25001")
 //                .taskAssignee("rengar")
                 .orderByHistoricActivityInstanceId().asc()
 //                .finished()  //查询已完成
@@ -324,6 +324,7 @@ public class FlowableSpringbootApplicationTests {
             for (HistoricTaskInstance hti : list) {
                 System.out.println("=================【 任务" + i + " 】=================");
                 System.out.println("编号：" + hti.getId());
+                System.out.println("编号: " + hti.getTaskDefinitionKey());
                 System.out.println(hti.getName());
                 List<HistoricVariableInstance> hvis = processEngine.getHistoryService()
                         .createHistoricVariableInstanceQuery()
@@ -389,7 +390,7 @@ public class FlowableSpringbootApplicationTests {
      */
     @Test
     public void queryHistoricActivitiInstance() throws Exception {
-        String processInstanceId = "5001";
+        String processInstanceId = "15001";
         List<HistoricActivityInstance> haiList = processEngine.getHistoryService()
                 .createHistoricActivityInstanceQuery() // 创建历史活动实例查询
 //                .taskAssignee("rengar")
@@ -425,8 +426,6 @@ public class FlowableSpringbootApplicationTests {
         System.out.println(e1.getId());
         System.out.println(e1.getName());
         processEngine.getRuntimeService().signalEventReceived(e1.getId());
-
-
     }
 
     /***
@@ -434,15 +433,29 @@ public class FlowableSpringbootApplicationTests {
      */
     @Test
     public void bohui(){
-        List<Task> tasks = processEngine.getTaskService().createTaskQuery().processInstanceId("15001").list();
-        tasks.forEach(t -> System.out.println(t.getTaskDefinitionKey()));
+        //获取当前审批人
+        List<Task> tasks = processEngine.getTaskService().createTaskQuery().processInstanceId("25001").list();
+
+//        tasks.forEach(t -> System.out.println(t.getTaskDefinitionKey()));
         List<String> keys = new ArrayList<>();
         tasks.forEach(t -> keys.add(t.getTaskDefinitionKey()));
 
-        processEngine.getRuntimeService().createChangeActivityStateBuilder()
-                .processInstanceId("15001")
-                .moveActivityIdsToSingleActivityId(keys, "directorTak")
-                .changeState();
+        //获取历史审批节点信息
+        List<HistoricTaskInstance> list = processEngine.getHistoryService()//与历史数据（历史表）相关的service
+                .createHistoricTaskInstanceQuery()//创建历史任务实例查询
+                .processInstanceId("25001")
+                .orderByHistoricActivityInstanceId().asc()
+                .list();
+        List<String> values = new ArrayList<>();
+        list.forEach(s -> values.add(s.getTaskDefinitionKey()));
+        list.forEach(s -> System.out.println(s.getAssignee()));
+        values.forEach(s -> System.out.println(s));
+
+        //驳回到指定审批人
+//        processEngine.getRuntimeService().createChangeActivityStateBuilder()
+//                .processInstanceId("15001")
+//                .moveActivityIdsToSingleActivityId(keys, "directorTak")
+//                .changeState();
     }
 
 
@@ -459,6 +472,47 @@ public class FlowableSpringbootApplicationTests {
         processEngine.getIdentityService().createMembership("pig","BOSS");
     }
 
+    @Test
+    public void huoqu() {
+        String processDefinitionId = "Expense:2:10006";
+            BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinitionId);
+            Process mainProcess = bpmnModel.getMainProcess();
+            List<String> nodes = new ArrayList<>();
+            Collection<FlowElement> flowElements = mainProcess.getFlowElements();
+            String startEventId = "";
+            //获取所有节点排除连线
+            for (FlowElement flowElement : flowElements) {
+                if (flowElement instanceof StartEvent) {
+                    StartEvent startEvent = (StartEvent) flowElement;
+                    startEventId = startEvent.getId();
+                    String startEventName = startEvent.getName();
+                    nodes.add(startEventName);
+                    break;
+                }
+            }
+            FlowElement flowElement = mainProcess.getFlowElement(startEventId);
+            while (!(flowElement instanceof EndEvent)) {
+                if (flowElement instanceof FlowNode) {
+                    FlowNode flowElementNode = (FlowNode) flowElement;
+                    SequenceFlow outgoingFlows = flowElementNode.getOutgoingFlows().get(0);
+                    if (outgoingFlows.getTargetRef() != null) {
+                        String targetRef = outgoingFlows.getTargetRef();
+                        flowElement = mainProcess.getFlowElement(targetRef);
+                        String nodesName = flowElement.getName();
+                        String nodesid = flowElement.getId();
+                        nodes.add(nodesName);
+                        nodes.add(nodesid);
+                    }
+                } else if (flowElement instanceof SequenceFlow) {
+                    SequenceFlow sequenceFlow = (SequenceFlow) flowElement;
+                    if (sequenceFlow.getTargetRef() != null) {
+                        String targetRef = sequenceFlow.getTargetRef();
+                        flowElement = mainProcess.getFlowElement(targetRef);
+                    }
+                }
+            }
+        System.out.println(nodes.toString());
+    }
 
 }
 

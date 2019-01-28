@@ -11,6 +11,7 @@
         border-spacing: 0;
         width: 100%;
     }
+
     .bordered {
         border: solid #ccc 1px;
         -moz-border-radius: 6px;
@@ -33,9 +34,10 @@
     .bordered td, .bordered th {
         border-left: 1px solid #ccc;
         border-top: 1px solid #ccc;
-        padding:3px;/*供修改*/
-        text-align: center;/*供修改*/
+        padding: 3px; /*供修改*/
+        text-align: center; /*供修改*/
     }
+
     .bordered th {
         background-color: #dce9f9;
         background-image: -webkit-gradient(linear, left top, left bottom, from(#ebf3fc), to(#dce9f9));
@@ -44,11 +46,11 @@
         background-image: -ms-linear-gradient(top, #ebf3fc, #dce9f9);
         background-image: -o-linear-gradient(top, #ebf3fc, #dce9f9);
         background-image: linear-gradient(top, #ebf3fc, #dce9f9);
-        -webkit-box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
-        -moz-box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
-        box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
+        -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset;
+        -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset;
         border-top: none;
-        text-shadow: 0 1px 0 rgba(255,255,255,.5);
+        text-shadow: 0 1px 0 rgba(255, 255, 255, .5);
     }
 
     .bordered td:first-child, .bordered th:first-child {
@@ -67,7 +69,7 @@
         border-radius: 0 6px 0 0;
     }
 
-    .bordered th:only-child{
+    .bordered th:only-child {
         -moz-border-radius: 6px 6px 0 0;
         -webkit-border-radius: 6px 6px 0 0;
         border-radius: 6px 6px 0 0;
@@ -102,6 +104,11 @@
 </div>
 
 
+<div>
+
+    <table class="turnDown"></table>
+
+</div>
 
 
 <script type="text/javascript" src="js/jquery-2.1.1.js"></script>
@@ -114,17 +121,17 @@
             url: '/expense/list',
             data: $userId.serialize(),
             dataType: 'json',
-            success: function(json) {
+            success: function (json) {
                 var item = "<tr style='background-color: #dce9f9'>" +
                     "<td>申请人工号</td>" +
                     "<td>申请人名称</td>" +
                     "<td>开始时间</td>" +
                     "<td>请假天数</td>" +
-                    "<td>请假原因</td>"+
-                    "<td>通过</td>"+
-                    "<td>驳回</td>"+
+                    "<td>请假原因</td>" +
+                    "<td>通过</td>" +
+                    "<td>驳回</td>" +
                     "</tr>";
-                $.each(json, function(i, result) {
+                $.each(json, function (i, result) {
                     item = item + "<tr>" +
                         "<td>" + result['userId'] + "</td>" +
                         "<td>" + result['userName'] + "</td>" +
@@ -132,13 +139,43 @@
                         "<td>" + result['numDays'] + "</td>" +
                         "<td>" + result['description'] + "</td>" +
                         "<td><a href='/expense/apply?taskId=" + result['taskId'] + "'>通过</a></td>" +
-                        "<td><a href='/expense/reject?taskId=" + result['taskId'] + "'>驳回</a></td>" +
+                        "<td><a onclick='trunDown(" + result['processInstanceID'] + ")'>驳回</a></td>" +
                         "</tr>";
                 });
                 $('.bordered').append(item);
             }
         });
     }
+
+    function trunDown(processInstanceID) {
+        $.ajax({
+            method: "post",
+            url: '/expense/turnDown',
+            data: {
+                processInstanceID:processInstanceID
+            },
+            dataType: 'json',
+            success: function (json) {
+                var item = "<tr style='background-color: #dce9f9'>" +
+                    "<td>审批人</td>" +
+                    "<td>驳  回</td>" +
+                    "</tr>";
+                var data = json;
+                for (var key in data) {   //key    data[key]
+                    alert("123");
+                    item = item + "<tr>" +
+                        "<td>" + key + "</td>" +
+                        "<td>" + data[key] + "</td>" +
+                        "</tr>";
+                    console.log(key + "==" + data[key]);
+                }
+
+                $('.turnDown').append(item);
+            }
+        })
+    }
+
+
 </script>
 </body>
 </html>

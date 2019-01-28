@@ -17,6 +17,7 @@ import org.flowable.idm.api.Group;
 import org.flowable.idm.api.User;
 import org.flowable.image.ProcessDiagramGenerator;
 import org.flowable.task.api.Task;
+import org.flowable.task.api.history.HistoricTaskInstance;
 import org.flowable.variable.api.history.HistoricVariableInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -126,11 +127,13 @@ public class ExpenseController {
                 .orderByTaskCreateTime()
                 .desc()
                 .list();
+
         List<LeaveApplication> leaveApplications = new ArrayList<>();
         for (Task task : tasks) {
             LeaveApplication leaveApplication = new LeaveApplication();
             Map<String, Object> processVariables = taskService.getVariables(task.getId());
             leaveApplication.setTaskId(task.getId());
+            leaveApplication.setProcessInstanceID(task.getProcessInstanceId());
             leaveApplication.setUserId(String.valueOf(processVariables.get("taskUser")));
             leaveApplication.setUserName(String.valueOf(processVariables.get("userName")));
             leaveApplication.setStartDate((Date) processVariables.get("startDate"));
@@ -141,6 +144,25 @@ public class ExpenseController {
         System.out.println("* * * 获取审批管理列表 * * *");
         return leaveApplications;
     }
+
+    /**
+     * 获取审批管理列表
+     */
+    @RequestMapping(value = "/turnDown")
+    @ResponseBody
+    public Map<String,String> turnDown(@Param("processInstanceID") String processInstanceID) {
+        Map<String, String> keys = new HashMap<>();
+
+        //获取历史审批节点信息
+        List<HistoricTaskInstance> list = processEngine.getHistoryService()//与历史数据（历史表）相关的service
+                .createHistoricTaskInstanceQuery()//创建历史任务实例查询
+                .processInstanceId(processInstanceID)
+                .orderByHistoricActivityInstanceId().asc()
+                .list();
+        list.forEach(s -> keys.put(processInstanceID,s.getTaskDefinitionKey()));
+        return keys;
+    }
+
 
 
     /**
@@ -159,11 +181,10 @@ public class ExpenseController {
 
         int i = 1;
         for (ProcessInstance processInstance : processInstanceList) {
-            System.out.println("=================【 任务" + i + " 】=================");
-            System.out.println("Id：" + processInstance.getId());
             Map<String, Object> processVariables = processEngine.getRuntimeService()
                     .getVariables(processInstance.getId());
             LeaveApplication leaveApplication = new LeaveApplication();
+            leaveApplication.setProcessInstanceID(processInstance.getId());
             leaveApplication.setUserId(String.valueOf(processVariables.get("taskUser")));
             leaveApplication.setUserName(String.valueOf(processVariables.get("userName")));
             leaveApplication.setStartDate((Date) processVariables.get("startDate"));
@@ -172,13 +193,6 @@ public class ExpenseController {
             leaveApplication.setIsok("待审批");
 
             leaveApplications.add(leaveApplication);
-            System.out.println("流程变量：" + processVariables.toString());
-            System.out.println("Name：" + processInstance.getName());
-            System.out.println("BusinessKey：" + processInstance.getBusinessKey());
-            System.out.println("ProcessVariables：" + processInstance.getProcessVariables().toString());
-            System.out.println("StartTime：" + processInstance.getStartTime());
-            System.out.println("ActivityId：" + processInstance.getActivityId());
-            System.out.println("StartUserId：" + processInstance.getStartUserId());
             i += 1;
         }
 
@@ -192,8 +206,7 @@ public class ExpenseController {
                 .desc()
                 .list();
         for (HistoricProcessInstance hpi : hpis) {
-            System.out.println("===========================");
-            System.out.println("Id==" + hpi.getId());
+
             LeaveApplication leaveApplication = new LeaveApplication();
 
             List<HistoricVariableInstance> hvis = processEngine.getHistoryService()
@@ -202,7 +215,7 @@ public class ExpenseController {
                     .orderByProcessInstanceId()
                     .desc()
                     .list();
-            System.out.println("* * * * * * * * * * * * * * * * * *");
+
             Class leaveClass = leaveApplication.getClass();
 
             Field[] fs = leaveClass.getDeclaredFields();
@@ -213,23 +226,11 @@ public class ExpenseController {
                     f.setAccessible(true);
                     if (f.getName().equals(hvi.getVariableName())) {
                         f.set(leaveApplication, hvi.getValue());
-                        System.out.println("VariableName==" + hvi.getVariableName() + ":   Value==" + hvi.getValue());
                     }
                 }
             }
             leaveApplication.setIsok("审批通过");
             leaveApplications.add(leaveApplication);
-
-            System.out.println("* * * * * * * * * * * * * * * * * *");
-            System.out.println("processInstanceId==" + hpi.getProcessDefinitionId());
-            System.out.println("StartUserId==" + hpi.getStartUserId());
-            System.out.println("BusinessKey==" + hpi.getBusinessKey());
-            System.out.println("开始时间==" + hpi.getStartTime());
-            System.out.println("结束时间==" + hpi.getEndTime());
-            System.out.println("花费时间==" + hpi.getDurationInMillis() + "毫秒");
-            System.out.println("Name==" + hpi.getName());
-            System.out.println("ProcessVariables==" + hpi.getProcessVariables().toString());
-            System.out.println("EndActivityId==" + hpi.getEndActivityId());
         }
 
 
