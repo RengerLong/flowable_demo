@@ -21,6 +21,7 @@ import org.flowable.task.api.history.HistoricTaskInstance;
 import org.flowable.variable.api.history.HistoricVariableInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -150,19 +151,41 @@ public class ExpenseController {
      */
     @RequestMapping(value = "/turnDown")
     @ResponseBody
-    public Map<String,String> turnDown(@Param("processInstanceID") String processInstanceID) {
-        Map<String, String> keys = new HashMap<>();
+    public List<String> turnDown(@Param("processInstanceID") String processInstanceID) {
+        List<String> keys = new ArrayList<>();
 
         //获取历史审批节点信息
         List<HistoricTaskInstance> list = processEngine.getHistoryService()//与历史数据（历史表）相关的service
                 .createHistoricTaskInstanceQuery()//创建历史任务实例查询
                 .processInstanceId(processInstanceID)
-                .orderByHistoricActivityInstanceId().asc()
+                .finished()
+                .orderByHistoricActivityInstanceId()
+                .asc()
                 .list();
-        list.forEach(s -> keys.put(processInstanceID,s.getTaskDefinitionKey()));
-        return keys;
+        list.forEach(s -> keys.add(s.getTaskDefinitionKey()));  //偷懒，直接返回节点名
+
+        List<String> keysTemplate = new ArrayList<>();
+        for(int i=0;i<keys.size();i++){                   //驳回后，查询历史审批人会有重复
+            if(!keysTemplate.contains(keys.get(i))){      //去重复。。感觉有点多余反正这样写有问题
+                keysTemplate.add(keys.get(i));            //肯定在查询的时候可以优化
+            }
+        }
+
+        return keysTemplate;
     }
 
+    @RequestMapping("/rejectNode/{processInstanceID}/{taskName}")
+    public String rejectNode(@PathVariable String processInstanceID,@PathVariable String taskName){
+        //获取当前审批人
+        List<Task> tasks = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceID).list();
+        List<String> keys = new ArrayList<>();
+        tasks.forEach(t -> keys.add(t.getTaskDefinitionKey()));
+        processEngine.getRuntimeService().createChangeActivityStateBuilder()
+                .processInstanceId(processInstanceID)
+                .moveActivityIdsToSingleActivityId(keys, taskName)
+                .changeState();
+        return "index";
+    }
 
 
     /**
@@ -172,7 +195,7 @@ public class ExpenseController {
     @ResponseBody
     public List<LeaveApplication> personlist(@Param("userId") String userId) throws IllegalAccessException {
 
-        //查询审批未完成的
+        //，查询审批未完成的
         List<ProcessInstance> processInstanceList = processEngine.getRuntimeService()
                 .createProcessInstanceQuery()
                 .startedBy(userId)
@@ -284,12 +307,12 @@ public class ExpenseController {
         if (pi == null) {
             return;
         }
-        Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).singleResult();
+//        Task task = taskService.createTaskQuery().processInstanceId(pi.getId()).singleResult();
         //使用流程实例ID，查询正在执行的执行对象表，返回流程实例对象
-        String InstanceId = task.getProcessInstanceId();
+//        String InstanceId = task.getProcessInstanceId();
         List<Execution> executions = runtimeService
                 .createExecutionQuery()
-                .processInstanceId(InstanceId)
+                .processInstanceId(processId)
                 .list();
 
         //得到正在执行的Activity的Id

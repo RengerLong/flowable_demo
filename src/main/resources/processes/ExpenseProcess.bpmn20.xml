@@ -37,7 +37,14 @@
     <parallelGateway gatewayDirection="Unspecified" id="Approval-1" name="并行网管-分支"/>
     <sequenceFlow id="_3" sourceRef="directorTak" targetRef="Approval-1"/>
     <userTask activiti:exclusive="true" flowable:assignee="bx1" id="AdminTask" name="行政审批"/>
-    <userTask activiti:candidateUsers="一号,二号,三号,四号,五号" activiti:exclusive="true" id="PersonTask" name="人事审批"/>
+
+    <userTask activiti:candidateUsers="一号,二号,三号,四号,五号" id="PersonTask" name="人事审批">
+      <multiInstanceLoopCharacteristics isSequential="false">
+        <loopCardinality>1</loopCardinality>
+        <completionCondition>${nrOfCompletedInstances/nrOfInstances >= 0.5}</completionCondition>
+      </multiInstanceLoopCharacteristics>
+    </userTask>
+
     <sequenceFlow id="_7" sourceRef="Approval-1" targetRef="PersonTask"/>
     <endEvent id="EndEvent" name="结束"/>
     <sequenceFlow id="_12" name="通过" sourceRef="bossTask" targetRef="EndEvent">

@@ -160,15 +160,13 @@
                     "<td>审批人</td>" +
                     "<td>驳  回</td>" +
                     "</tr>";
-                var data = json;
-                for (var key in data) {   //key    data[key]
-                    alert("123");
+
+                $.each(json, function (i, result) {
                     item = item + "<tr>" +
-                        "<td>" + key + "</td>" +
-                        "<td>" + data[key] + "</td>" +
+                        "<td>" + json[i] + "</td>" +
+                        "<td><a href='/expense/rejectNode/" +processInstanceID+"/"+json[i]+"'>驳回</a></td>" +
                         "</tr>";
-                    console.log(key + "==" + data[key]);
-                }
+                });
 
                 $('.turnDown').append(item);
             }

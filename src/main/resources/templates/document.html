@@ -121,7 +121,8 @@
                                 "<td>开始时间</td>" +
                                 "<td>请假天数</td>" +
                                 "<td>请假原因</td>"+
-                                "<td>是否通过</td>"
+                                "<td>是否通过</td>"+
+                                "<td>流程图</td>"
                             "</tr>";
                 $.each(json, function(i, result) {
                     item = item + "<tr>" +
@@ -131,6 +132,7 @@
                         "<td>" + result['numDays'] + "</td>" +
                         "<td>" + result['description'] + "</td>" +
                         "<td>" + result['isok'] + "</td>" +
+                        "<td><a href='/expense/processDiagram?processId="+result['processInstanceID']+"'>查看流程图</a></td>" +
                         "</tr>";
                 });
                 $('.bordered').append(item);
