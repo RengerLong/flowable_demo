@@ -313,10 +313,10 @@ public class FlowableSpringbootApplicationTests {
     public void findTask() {
         List<HistoricTaskInstance> list = processEngine.getHistoryService()//与历史数据（历史表）相关的service
                 .createHistoricTaskInstanceQuery()//创建历史任务实例查询
-                .processInstanceId("25001")
-//                .taskAssignee("rengar")
+//                .processInstanceId("25001")
+                .taskAssignee("rengar")
                 .orderByHistoricActivityInstanceId().asc()
-//                .finished()  //查询已完成
+                .finished()  //查询已完成
                 .list();
 
         if (list != null && list.size() > 0) {
@@ -432,23 +432,28 @@ public class FlowableSpringbootApplicationTests {
      * 驳回到指定节点
      */
     @Test
-    public void bohui(){
+    public void turnDown(){
         //获取当前审批人
-        List<Task> tasks = processEngine.getTaskService().createTaskQuery().processInstanceId("25001").list();
+        List<Task> tasks = processEngine.getTaskService().createTaskQuery().processInstanceId("2501").list();
 
 //        tasks.forEach(t -> System.out.println(t.getTaskDefinitionKey()));
+
         List<String> keys = new ArrayList<>();
         tasks.forEach(t -> keys.add(t.getTaskDefinitionKey()));
+        keys.forEach(t -> System.out.println(t));
+        System.out.println("* * * * * * * * *");
 
         //获取历史审批节点信息
         List<HistoricTaskInstance> list = processEngine.getHistoryService()//与历史数据（历史表）相关的service
                 .createHistoricTaskInstanceQuery()//创建历史任务实例查询
-                .processInstanceId("25001")
+                .processInstanceId("2501")
+                .finished()
                 .orderByHistoricActivityInstanceId().asc()
                 .list();
         List<String> values = new ArrayList<>();
         list.forEach(s -> values.add(s.getTaskDefinitionKey()));
         list.forEach(s -> System.out.println(s.getAssignee()));
+        System.out.println("* * * * * * * * * *");
         values.forEach(s -> System.out.println(s));
 
         //驳回到指定审批人
@@ -458,7 +463,20 @@ public class FlowableSpringbootApplicationTests {
 //                .changeState();
     }
 
+    /**
+     * 可以分配个人任务从一个人到另一个人
+     */
+    @Test
+    public void setAssigneeTask(){
+        String taskId = "taskId";
+        String userId = "分配人";
+        processEngine.getTaskService().setAssignee(taskId, userId);
+    }
 
+
+    /***
+     * 添加组成员
+     */
     @Test
     public void addUser(){
         Group group = processEngine.getIdentityService().newGroup("BOSS");
@@ -472,6 +490,11 @@ public class FlowableSpringbootApplicationTests {
         processEngine.getIdentityService().createMembership("pig","BOSS");
     }
 
+
+
+    /***
+     * 获取所有节点 taskkey
+     */
     @Test
     public void huoqu() {
         String processDefinitionId = "Expense:2:10006";

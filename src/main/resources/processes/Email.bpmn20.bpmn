@@ -10,7 +10,15 @@
     <sequenceFlow id="_8" sourceRef="ServiceTask" targetRef="EndEvent"/>
     <parallelGateway gatewayDirection="Unspecified" id="_2" name="ParallelGateway"/>
     <sequenceFlow id="_3" sourceRef="UserTask" targetRef="_2"/>
-    <userTask activiti:exclusive="true" id="_4" name="UserTask"/>
+    <userTask activiti:assignee="{taskUser}" activiti:exclusive="true" id="_4" name="UserTask">
+      <extensionElements>
+        <activiti:taskListener event="create"/>
+        <activiti:taskListener event="create"/>
+        <activiti:taskListener event="create"/>
+        <activiti:executionListener event="start"/>
+        <activiti:executionListener event="start"/>
+      </extensionElements>
+    </userTask>
     <userTask activiti:exclusive="true" id="_5" name="UserTask"/>
     <sequenceFlow id="_9" sourceRef="_2" targetRef="_4"/>
     <sequenceFlow id="_10" sourceRef="_2" targetRef="_5"/>

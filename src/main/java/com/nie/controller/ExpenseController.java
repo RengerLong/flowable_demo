@@ -91,14 +91,11 @@ public class ExpenseController {
         HashMap<String, Object> map = new HashMap<>();
         map.put("taskUser", leave.getName());
         map.put("numDays", leave.getNumDays());
-
         int nId = leaveService.saveLeave(leave);
-
         //设置发起人
         Authentication.setAuthenticatedUserId(leave.getName());
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(processDefinitionKey, String.valueOf(nId),map);
         System.out.println("提交成功.流程实例Id为：" + processInstance.getId());
-        //startProcessInstanceById(processDefinition.getId(), map);
         Authentication.setAuthenticatedUserId(null);
 
 
