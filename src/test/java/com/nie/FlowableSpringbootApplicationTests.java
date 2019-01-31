@@ -360,8 +360,8 @@ public class FlowableSpringbootApplicationTests {
                 .getTaskService()
                 .createTaskQuery()
                 .taskCandidateOrAssigned(assignee)
-//                .taskCandidateUser(assignee)
-//                .taskAssignee(assignee)
+//                .taskCandidateUser(assignee)  //组成员
+//                .taskAssignee(assignee)   //个人审批人
 //                            .processDefinitionKey("Expense")   //可指定任务类型
                 .orderByTaskCreateTime()
                 .desc()
@@ -457,10 +457,10 @@ public class FlowableSpringbootApplicationTests {
         values.forEach(s -> System.out.println(s));
 
         //驳回到指定审批人
-//        processEngine.getRuntimeService().createChangeActivityStateBuilder()
-//                .processInstanceId("15001")
-//                .moveActivityIdsToSingleActivityId(keys, "directorTak")
-//                .changeState();
+        processEngine.getRuntimeService().createChangeActivityStateBuilder()
+                .processInstanceId("15001")
+                .moveActivityIdsToSingleActivityId(keys, "directorTak")
+                .changeState();
     }
 
     /**

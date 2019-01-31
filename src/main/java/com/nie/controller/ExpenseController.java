@@ -39,6 +39,7 @@ import java.util.*;
 @Controller
 @RequestMapping(value = "expense")
 public class ExpenseController {
+
     @Autowired
     private RuntimeService runtimeService;
     @Autowired
@@ -52,30 +53,9 @@ public class ExpenseController {
     @Autowired
     private LeaveService leaveService;
 
-
-    @RequestMapping("/test")
-    @ResponseBody
-    public List<LeaveApplication> test(){
-        LeaveApplication leaveApplication = new LeaveApplication();
-        leaveApplication.setUserId("1");
-        leaveApplication.setUserName("111");
-        leaveApplication.setStartDate(new Date());
-        leaveApplication.setNumDays(5);
-        leaveApplication.setDescription("描述");
-
-        LeaveApplication leaveApplication2 = new LeaveApplication();
-        leaveApplication2.setUserId("1");
-        leaveApplication2.setUserName("111");
-        leaveApplication2.setStartDate(new Date());
-        leaveApplication2.setNumDays(5);
-        leaveApplication2.setDescription("描述");
-
-        List<LeaveApplication> leaveApplicationlist = new ArrayList<>();
-        leaveApplicationlist.add(leaveApplication);
-        leaveApplicationlist.add(leaveApplication2);
-
-        return leaveApplicationlist;
-    }
+/***
+ * 流程最后一步为组审批，需要下运行 FlowableSpringbootApplicationTests 类中的 addUser()方法
+ */
 
 
     /**
@@ -85,6 +65,7 @@ public class ExpenseController {
     @RequestMapping(value = "/add")
     public String addExpense(Leave leave) {
 
+        //为流程图 KEY
         String processDefinitionKey = "Expense";
 
         //启动流程
@@ -99,14 +80,13 @@ public class ExpenseController {
         Authentication.setAuthenticatedUserId(null);
 
 
-        //流程图上设置第一个审批人为flow，这里直接审批通过
+        //流程图上设置第一个审批人为发起人，这里直接审批通过
         List<Task> tasks = taskService.createTaskQuery().taskAssignee(leave.getName()).orderByTaskCreateTime()
                 .asc().list();
         Task task = tasks.get(tasks.size()-1);
         HashMap<String, Object> taskUserMap = new HashMap<>();
         taskUserMap.put("taskUser", leave.getName());
         taskService.complete(task.getId(),taskUserMap);
-        System.out.println("flow审批通过！！");
         return "index";
     }
 
@@ -121,7 +101,7 @@ public class ExpenseController {
 //                .taskAssignee(userId)   //指定个人任务查询
 //                .or()
 //                .taskCandidateUser(userId)    //指定组任务查询
-                .taskCandidateOrAssigned(userId)
+                .taskCandidateOrAssigned(userId)    //个人或组认为查询
                 .orderByTaskCreateTime()
                 .desc()
                 .list();
@@ -131,20 +111,25 @@ public class ExpenseController {
             LeaveApplication leaveApplication = new LeaveApplication();
             Map<String, Object> processVariables = taskService.getVariables(task.getId());
             leaveApplication.setTaskId(task.getId());
+
+            //下面这几行为获取流程变量赋值的过程，后续可省略这种
             leaveApplication.setProcessInstanceID(task.getProcessInstanceId());
             leaveApplication.setUserId(String.valueOf(processVariables.get("taskUser")));
             leaveApplication.setUserName(String.valueOf(processVariables.get("userName")));
             leaveApplication.setStartDate((Date) processVariables.get("startDate"));
             leaveApplication.setNumDays(Integer.valueOf(String.valueOf(processVariables.get("numDays"))));
             leaveApplication.setDescription(String.valueOf(processVariables.get("description")));
+
             leaveApplications.add(leaveApplication);
         }
         System.out.println("* * * 获取审批管理列表 * * *");
         return leaveApplications;
     }
 
-    /**
+    /***
      * 获取审批管理列表
+     * @param processInstanceID 流程实例ID
+     * @return
      */
     @RequestMapping(value = "/turnDown")
     @ResponseBody
@@ -163,7 +148,7 @@ public class ExpenseController {
 
         List<String> keysTemplate = new ArrayList<>();
         for(int i=0;i<keys.size();i++){                   //驳回后，查询历史审批人会有重复
-            if(!keysTemplate.contains(keys.get(i))){      //去重复。。感觉有点多余反正这样写有问题
+            if(!keysTemplate.contains(keys.get(i))){      //去重复。。感觉有点多余
                 keysTemplate.add(keys.get(i));            //肯定在查询的时候可以优化
             }
         }
@@ -171,6 +156,12 @@ public class ExpenseController {
         return keysTemplate;
     }
 
+    /***
+     * 驳回到指定节点
+     * @param processInstanceID 流程实例Id
+     * @param taskName 返回的节点Id值
+     * @return
+     */
     @RequestMapping("/rejectNode/{processInstanceID}/{taskName}")
     public String rejectNode(@PathVariable String processInstanceID,@PathVariable String taskName){
         //获取当前审批人
@@ -185,8 +176,13 @@ public class ExpenseController {
     }
 
 
-    /**
-     * 获取审批管理列表
+    /***
+     * 获取发起人  审批列表
+     * @param userId 发起人Id  对应上方第77行代码
+     * @return
+     * 此处我的设想为当流程发生改变时修改  自己的表数据 这样发起人查看个人审批
+     * 只需要查询自己的表就行了
+     * @throws IllegalAccessException
      */
     @RequestMapping(value = "/personlist")
     @ResponseBody
@@ -225,6 +221,10 @@ public class ExpenseController {
                 .orderByProcessInstanceEndTime()
                 .desc()
                 .list();
+
+        //这里为根据用户Id 得到 历史表中的 processInstance 流程实例ID
+        //但是在写注释时发现，在查审批完成时已经获取 实例Id 上面有又查了一遍
+
         for (HistoricProcessInstance hpi : hpis) {
 
             LeaveApplication leaveApplication = new LeaveApplication();
@@ -237,10 +237,7 @@ public class ExpenseController {
                     .list();
 
             Class leaveClass = leaveApplication.getClass();
-
             Field[] fs = leaveClass.getDeclaredFields();
-
-
             for (HistoricVariableInstance hvi : hvis) {
                 for (Field f : fs) {
                     f.setAccessible(true);
@@ -294,7 +291,7 @@ public class ExpenseController {
     /**
      * 生成流程图
      *
-     * @param processId 任务ID
+     * @param processId 流程实例ID
      */
     @RequestMapping(value = "processDiagram")
     public void genProcessDiagram(HttpServletResponse httpServletResponse, String processId) throws Exception {
